@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class Entry(BaseModel):
@@ -24,5 +24,4 @@ class Entry(BaseModel):
             raise ValueError("Duration must be a positive number of seconds")
         return value
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
