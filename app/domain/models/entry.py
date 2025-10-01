@@ -5,7 +5,7 @@ class Entry(BaseModel):
     """
     Доменная модель записи о времени.
     """
-    id: int
+    id: int | None = None
     task: str = Field(min_length=1, max_length=255)
     started_at: datetime
     duration_seconds: int
