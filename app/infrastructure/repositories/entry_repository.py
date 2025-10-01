@@ -2,7 +2,7 @@ from typing import List, Optional
 from sqlalchemy.orm import Session
 from app.domain.models.entry import Entry as DomainEntry
 from app.domain.repositories import AbstractEntryRepository
-from app.infrastructure.orm.entry import Entry as ORMEntry
+from app.infrastructure.orm.models import Entry as ORMEntry
 
 class SqlAlchemyEntryRepository(AbstractEntryRepository):
     def __init__(self, session: Session):

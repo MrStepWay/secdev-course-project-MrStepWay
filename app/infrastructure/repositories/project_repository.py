@@ -2,7 +2,7 @@ from typing import List, Optional
 from sqlalchemy.orm import Session
 from app.domain.models.project import Project as DomainProject
 from app.domain.repositories import AbstractProjectRepository
-from app.infrastructure.orm.project import Project as ORMProject
+from app.infrastructure.orm.models import Project as ORMProject
 
 class SqlAlchemyProjectRepository(AbstractProjectRepository):
     def __init__(self, session: Session):
@@ -19,7 +19,7 @@ class SqlAlchemyProjectRepository(AbstractProjectRepository):
         return [DomainProject.model_validate(p) for p in projects_orm]
 
     def add(self, project: DomainProject) -> DomainProject:
-        project_orm = ORMProject(**project.model_dump())
+        project_orm = ORMProject(**project.model_dump(exclude_none=True))
         self.session.add(project_orm)
         self.session.commit()
         self.session.refresh(project_orm)

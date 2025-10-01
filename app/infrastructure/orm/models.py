@@ -1,8 +1,22 @@
+from typing import List
 from datetime import datetime
 from sqlalchemy import Integer, String, DateTime, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.infrastructure.orm.base import Base
-from app.infrastructure.orm.project import Project
+
+class Project(Base):
+    """
+    Модель таблицы проектов.
+    """
+    __tablename__ = "projects"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    title: Mapped[str] = mapped_column(String(100), nullable=False)
+
+    # Один-ко-многим с каскадным удалением
+    entries: Mapped[List["Entry"]] = relationship(
+        back_populates="project", cascade="all, delete-orphan"
+    )
 
 class Entry(Base):
     """
