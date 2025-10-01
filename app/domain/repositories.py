@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional
+
 from .models.entry import Entry
 from .models.project import Project
+
 
 class AbstractProjectRepository(ABC):
     """
@@ -56,7 +58,7 @@ class AbstractEntryRepository(ABC):
     def add(self, entry: Entry) -> Entry:
         """Добавить новую запись."""
         raise NotImplementedError
-    
+
     @abstractmethod
     def update(self, entry: Entry) -> Entry:
         """Обновить существующую запись."""

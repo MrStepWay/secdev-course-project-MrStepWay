@@ -1,8 +1,11 @@
 from typing import List, Optional
+
 from sqlalchemy.orm import Session
+
 from app.domain.models.entry import Entry as DomainEntry
 from app.domain.repositories import AbstractEntryRepository
 from app.infrastructure.orm.models import Entry as ORMEntry
+
 
 class SqlAlchemyEntryRepository(AbstractEntryRepository):
     def __init__(self, session: Session):
@@ -18,7 +21,7 @@ class SqlAlchemyEntryRepository(AbstractEntryRepository):
         query = self.session.query(ORMEntry)
         if project_id:
             query = query.filter(ORMEntry.project_id == project_id)
-        
+
         entries_orm = query.all()
         return [DomainEntry.model_validate(e) for e in entries_orm]
 
@@ -34,11 +37,11 @@ class SqlAlchemyEntryRepository(AbstractEntryRepository):
 
         if not entry_orm:
             raise ValueError(f"Entry with id {entry.id} not found")
-        
+
         entry_data = entry.model_dump(exclude_unset=True)
         for key, value in entry_data.items():
             setattr(entry_orm, key, value)
-        
+
         self.session.commit()
         self.session.refresh(entry_orm)
         return DomainEntry.model_validate(entry_orm)

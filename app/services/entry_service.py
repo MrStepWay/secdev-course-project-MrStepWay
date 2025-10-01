@@ -4,6 +4,7 @@ from app.domain.models.entry import Entry
 from app.domain.repositories import AbstractEntryRepository, AbstractProjectRepository
 from app.services.dtos import EntryCreateDTO, EntryUpdateDTO
 
+
 class EntryService:
     def __init__(
         self,
@@ -29,9 +30,9 @@ class EntryService:
         # Проверяем, существует ли проект
         if not self.project_repo.get(entry_dto.project_id):
             raise ValueError(f"Project with id {entry_dto.project_id} does not exist.")
-        
+
         new_entry_domain = Entry(**entry_dto.model_dump())
-        
+
         created_entry = self.entry_repo.add(new_entry_domain)
         return created_entry
 
@@ -39,7 +40,7 @@ class EntryService:
         """Обновить существующую запись."""
         entry_to_update = self.entry_repo.get(entry_id)
         if not entry_to_update:
-            return None # Запись не найдена
+            return None  # Запись не найдена
 
         update_data = entry_dto.model_dump(exclude_unset=True)
 
@@ -47,10 +48,10 @@ class EntryService:
         if "project_id" in update_data:
             if not self.project_repo.get(update_data["project_id"]):
                 raise ValueError(f"Project with id {update_data['project_id']} does not exist.")
-        
+
         for key, value in update_data.items():
             setattr(entry_to_update, key, value)
-        
+
         # Повторная валидация после обновления
         validated_entry = Entry.model_validate(entry_to_update)
 
@@ -61,7 +62,7 @@ class EntryService:
         """Удалить запись."""
         entry_to_delete = self.entry_repo.get(entry_id)
         if not entry_to_delete:
-            return False # Нечего удалять
-        
+            return False  # Нечего удалять
+
         self.entry_repo.delete(entry_id)
         return True

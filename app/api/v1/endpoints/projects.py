@@ -1,12 +1,15 @@
 from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import Response
+
 from app.api.dependencies import get_project_service
 from app.api.v1.schemas.project import ProjectCreateRequest, ProjectResponse, ProjectUpdateRequest
 from app.services.dtos import ProjectCreateDTO, ProjectUpdateDTO
 from app.services.project_service import ProjectService
 
 router = APIRouter()
+
 
 @router.post("/", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
 def create_project(
@@ -17,9 +20,11 @@ def create_project(
     project = service.create_project(project_dto)
     return project
 
+
 @router.get("/", response_model=List[ProjectResponse])
 def get_all_projects(service: ProjectService = Depends(get_project_service)):
     return service.get_all_projects()
+
 
 @router.get("/{project_id}", response_model=ProjectResponse)
 def get_project(
@@ -30,6 +35,7 @@ def get_project(
     if not project:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
     return project
+
 
 @router.put("/{project_id}", response_model=ProjectResponse)
 def update_project(
@@ -42,6 +48,7 @@ def update_project(
     if not updated_project:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
     return updated_project
+
 
 @router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_project(

@@ -1,13 +1,17 @@
-from typing import List
 from datetime import datetime
-from sqlalchemy import Integer, String, DateTime, ForeignKey
+from typing import List
+
+from sqlalchemy import DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from app.infrastructure.orm.base import Base
+
 
 class Project(Base):
     """
     Модель таблицы проектов.
     """
+
     __tablename__ = "projects"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
@@ -18,10 +22,12 @@ class Project(Base):
         back_populates="project", cascade="all, delete-orphan"
     )
 
+
 class Entry(Base):
     """
     Модель таблицы с записями.
     """
+
     __tablename__ = "entries"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)

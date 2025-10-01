@@ -4,6 +4,7 @@ from app.domain.models.project import Project
 from app.domain.repositories import AbstractProjectRepository
 from app.services.dtos import ProjectCreateDTO, ProjectUpdateDTO
 
+
 class ProjectService:
     def __init__(self, project_repo: AbstractProjectRepository):
         self.project_repo = project_repo
@@ -27,13 +28,13 @@ class ProjectService:
         """Обновить существующий проект."""
         project_to_update = self.project_repo.get(project_id)
         if not project_to_update:
-            return None # Проект не найден
-        
+            return None  # Проект не найден
+
         # Обновляем только те поля, которые были переданы в DTO
         update_data = project_dto.model_dump(exclude_unset=True)
         for key, value in update_data.items():
             setattr(project_to_update, key, value)
-            
+
         updated_project = self.project_repo.update(project_to_update)
         return updated_project
 
@@ -41,7 +42,7 @@ class ProjectService:
         """Удалить проект."""
         project_to_delete = self.project_repo.get(project_id)
         if not project_to_delete:
-            return False # Проект не найден, удаления по сути не было
-        
+            return False  # Проект не найден, удаления по сути не было
+
         self.project_repo.delete(project_id)
         return True

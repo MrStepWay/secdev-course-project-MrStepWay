@@ -13,18 +13,18 @@ ERROR_CODE_MAP = {
     status.HTTP_500_INTERNAL_SERVER_ERROR: "server_error",
 }
 
+
 async def http_exception_handler(request: Request, exc: Exception):
     """Обработчик для стандартных HTTP-ошибок (HTTPException)."""
     assert isinstance(exc, StarletteHTTPException)
-    
+
     code = ERROR_CODE_MAP.get(exc.status_code, "server_error")
-    
+
     return JSONResponse(
         status_code=exc.status_code,
-        content={
-            "error": {"code": code, "message": exc.detail}
-        },
+        content={"error": {"code": code, "message": exc.detail}},
     )
+
 
 async def validation_exception_handler(request: Request, exc: Exception):
     """Обработчик для ошибок валидации Pydantic."""
@@ -36,10 +36,11 @@ async def validation_exception_handler(request: Request, exc: Exception):
             "error": {
                 "code": "validation_error",
                 "message": "Input validation failed",
-                "details": exc.errors()
+                "details": exc.errors(),
             }
         },
     )
+
 
 def register_exception_handlers(app: FastAPI):
     """Регистрирует кастомные обработчики исключений в приложении FastAPI."""

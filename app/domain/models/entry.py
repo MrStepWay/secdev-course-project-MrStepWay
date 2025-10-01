@@ -1,17 +1,20 @@
 from datetime import datetime
+
 from pydantic import BaseModel, Field, field_validator
+
 
 class Entry(BaseModel):
     """
     Доменная модель записи о времени.
     """
+
     id: int | None = None
     task: str = Field(min_length=1, max_length=255)
     started_at: datetime
     duration_seconds: int
     project_id: int
 
-    @field_validator('duration_seconds')
+    @field_validator("duration_seconds")
     @classmethod
     def duration_must_be_positive(cls, value: int) -> int:
         """
