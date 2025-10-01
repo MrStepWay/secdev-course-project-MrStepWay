@@ -30,13 +30,7 @@ class EntryService:
         if not self.project_repo.get(entry_dto.project_id):
             raise ValueError(f"Project with id {entry_dto.project_id} does not exist.")
         
-        new_entry_domain = Entry(
-            id=0, # Временный id
-            task=entry_dto.task,
-            started_at=entry_dto.started_at,
-            duration_seconds=entry_dto.duration_seconds,
-            project_id=entry_dto.project_id,
-        )
+        new_entry_domain = Entry(**entry_dto.model_dump())
         
         created_entry = self.entry_repo.add(new_entry_domain)
         return created_entry

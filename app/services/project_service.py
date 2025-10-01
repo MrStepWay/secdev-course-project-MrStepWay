@@ -19,7 +19,7 @@ class ProjectService:
 
     def create_project(self, project_dto: ProjectCreateDTO) -> Project:
         """Создать новый проект."""
-        new_project_domain = Project(id=0, title=project_dto.title) # id - временный, бд сама создаст нужный id
+        new_project_domain = Project(**project_dto.model_dump())
         created_project = self.project_repo.add(new_project_domain)
         return created_project
 
