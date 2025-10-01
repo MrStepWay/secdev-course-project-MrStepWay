@@ -9,6 +9,8 @@
 
 Репозиторий защищён от push'ей в main ветку с помощью pre-commit.
 
+Документация Swagger Open API находится по адресуo `lcalhost:8000/docs`
+
 ## Быстрый старт
 ```bash
 docker-compose up --build
