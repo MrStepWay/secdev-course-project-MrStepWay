@@ -1,14 +1,19 @@
-# SecDev Course Template
+# Project: Time Tracer
 
-Стартовый шаблон для студенческого репозитория (HSE SecDev 2025).
+Есть две сущности: проект и запись.
+Реализованы CRUD операции над этими сущностями.
+
+**Сценарий использования:** пользователь создаёт проекты, а уже к ним привязывает записи о времени начала и длительности какого-то действия.
+
+На данный момент не реализованы пользователи, но они будут добавлены в будущем вместе с авторизацией. Статистика, экспорт в CSV и тесты также будет добавлен позднее.
+
+Репозиторий защищён от push'ей в main ветку с помощью pre-commit.
+
+Документация Swagger Open API находится по адресуo `lcalhost:8000/docs`
 
 ## Быстрый старт
 ```bash
-python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\Activate.ps1
-pip install -r requirements.txt -r requirements-dev.txt
-pre-commit install
-uvicorn app.main:app --reload
+docker-compose up --build
 ```
 
 ## Ритуал перед PR
