@@ -15,14 +15,14 @@ flowchart LR
 
     subgraph Server Host [Trust Boundary: Server Host Environment]
         direction TB
-        
+
         subgraph Docker Network [Trust Boundary: Internal Docker Network]
             direction LR
-            
+
             subgraph API Container [Container Boundary: API]
                 WebServer[Web Server <br/> Uvicorn] <-->|F3: ASGI| AppLogic[Time Tracker API]
             end
-            
+
             subgraph DB Container [Container Boundary: Database]
                 DB[(PostgreSQL Database)]
             end
@@ -30,14 +30,14 @@ flowchart LR
 
         HostRuntime[Host / Container Runtime <br/> Docker Engine]
     end
-    
+
     %% Пользовательские потоки
     ClientApp -- "F1: Auth Requests (Register/Login)" <br/> HTTPS --> WebServer
     ClientApp -- "F2: API Calls with access token" <br/> HTTPS --> WebServer
-    
+
     %% Внутренние потоки
     AppLogic -- "F4: DB Queries" <br/> TCP/IP --> DB
-    
+
     %% Потоки окружения и управления
     HostRuntime -- "F5: Configuration" <br/> Env Vars --> AppLogic
     AppLogic -- "F6: Logging" <br/> stdout/stderr --> HostRuntime
