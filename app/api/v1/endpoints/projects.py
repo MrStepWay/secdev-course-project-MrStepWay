@@ -43,6 +43,12 @@ def update_project(
     project_in: ProjectUpdateRequest,
     service: ProjectService = Depends(get_project_service),
 ):
+    if not project_in.model_dump(exclude_unset=True):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="At least one field must be provided for update",
+        )
+
     project_dto = ProjectUpdateDTO(**project_in.model_dump())
     updated_project = service.update_project(project_id, project_dto)
     if not updated_project:
