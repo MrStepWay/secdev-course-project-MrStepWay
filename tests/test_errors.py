@@ -48,3 +48,17 @@ def test_validation_error_conforms_to_rfc7807(client: TestClient):
     assert "correlation_id" in data
 
     assert "errors" in data
+
+def test_unhandled_route_error_conforms_to_rfc7807(client: TestClient):
+    """
+    Проверяет, что ошибка для несуществующего маршрута возвращается в формате RFC 7807.
+    """
+    response = client.get("/api/v1/this/route/does/not/exist")
+
+    assert response.status_code == 404
+    data = response.json()
+
+    assert data["title"] == "Not Found"
+    assert data["status"] == 404
+    assert "correlation_id" in data
+    assert data.get("type") == "about:blank"
