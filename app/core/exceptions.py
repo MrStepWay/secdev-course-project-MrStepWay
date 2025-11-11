@@ -52,6 +52,17 @@ async def validation_exception_handler(request: Request, exc: Exception):
     correlation_id = str(uuid4())
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
 
+    # Поле 'ctx' в ошибках Pydantic, как оказалось, может содержать несериализуемые объекты,
+    # поэтому преобразуем их в строки.
+    serializable_errors = []
+    for error in exc.errors():
+        clean_error = error.copy()  # Работаем с копией, чтобы не изменять оригинал
+        if ctx := clean_error.get("ctx"):
+            if exc_obj := ctx.get("error"):
+                if isinstance(exc_obj, Exception):
+                    ctx["error"] = str(exc_obj)
+        serializable_errors.append(clean_error)
+
     return JSONResponse(
         status_code=status_code,
         content={
@@ -59,7 +70,7 @@ async def validation_exception_handler(request: Request, exc: Exception):
             "title": "Validation Error",
             "status": status_code,
             "detail": "Input validation failed. Check the 'errors' field for details.",
-            "errors": exc.errors(),
+            "errors": serializable_errors,
             "correlation_id": correlation_id,
         },
     )
