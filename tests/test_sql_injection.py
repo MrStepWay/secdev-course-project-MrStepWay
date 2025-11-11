@@ -1,5 +1,5 @@
-from fastapi.testclient import TestClient
 from fastapi import status
+from fastapi.testclient import TestClient
 
 
 def test_sql_injection_attempt_via_path_parameter_is_blocked(client: TestClient):
