@@ -3,10 +3,12 @@ from typing import Generator, List, Optional
 import pytest
 from fastapi.testclient import TestClient
 
-from app.api.dependencies import get_project_service
+from app.api.dependencies import get_project_service, get_entry_service
 from app.domain.models.project import Project
 from app.main import app
 from app.services.dtos import ProjectCreateDTO, ProjectUpdateDTO
+from app.domain.models.entry import Entry
+from app.services.dtos import EntryCreateDTO, EntryUpdateDTO
 
 
 class MockProjectService:
@@ -54,15 +56,49 @@ class MockProjectService:
         return True
 
 
+class MockEntryService:
+    """Сервис, имитирующий интерфейс EntryService."""
+    def __init__(self, project_service: MockProjectService):
+        self.entries: List[Entry] = []
+        self._next_id = 1
+        self.project_service = project_service
+
+    def create_entry(self, entry_dto: EntryCreateDTO) -> Entry:
+        # Проверяем существование проекта
+        if not self.project_service.get_project_by_id(entry_dto.project_id):
+            raise ValueError(f"Project with id {entry_dto.project_id} does not exist.")
+        
+        # Валидация доменной модели (она сработает до этого теста, но для полноты мока пусть будет)
+        new_entry = Entry.model_validate(entry_dto)
+        new_entry.id = self._next_id
+        
+        self.entries.append(new_entry)
+        self._next_id += 1
+        return new_entry
+
+    def get_all_entries(self, project_id: Optional[int] = None) -> List[Entry]:
+        if project_id:
+            return [e for e in self.entries if e.project_id == project_id]
+        return self.entries
+
+
 @pytest.fixture
 def client() -> Generator[TestClient, None, None]:
-    """Cоздает клиент и управляет жизненным циклом мока."""
-    mock_service_instance = MockProjectService()
+    """Фикстура, которая мокает оба сервиса."""
+    # Используем существующую фикстуру из conftest для ProjectService
+    from app.main import app
 
-    def get_mock_service_override() -> MockProjectService:
-        return mock_service_instance
+    mock_project_service = MockProjectService()
+    mock_entry_service = MockEntryService(mock_project_service)
 
-    app.dependency_overrides[get_project_service] = get_mock_service_override
+    def get_mock_project_service_override():
+        return mock_project_service
+
+    def get_mock_entry_service_override():
+        return mock_entry_service
+
+    app.dependency_overrides[get_project_service] = get_mock_project_service_override
+    app.dependency_overrides[get_entry_service] = get_mock_entry_service_override
 
     with TestClient(app) as c:
         yield c
