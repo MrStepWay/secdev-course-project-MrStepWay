@@ -1,4 +1,5 @@
-from pydantic import BaseModel, ConfigDict, Field
+import re
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class ProjectBase(BaseModel):
@@ -7,6 +8,15 @@ class ProjectBase(BaseModel):
     """
 
     title: str = Field(min_length=1, max_length=100)
+    @field_validator("title")
+    @classmethod
+    def title_must_not_contain_special_chars(cls, value: str) -> str:
+        """
+        Название не должно содержать символы, часто используемые в атаках (XSS и тд).
+        """
+        if re.search(r"[<>{}]", value):
+            raise ValueError("Title must not contain special characters like <, >, {, }")
+        return value.strip()
 
 
 class ProjectCreateRequest(ProjectBase):
