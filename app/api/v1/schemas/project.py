@@ -1,4 +1,5 @@
 import re
+
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
@@ -8,6 +9,7 @@ class ProjectBase(BaseModel):
     """
 
     title: str = Field(min_length=1, max_length=100)
+
     @field_validator("title")
     @classmethod
     def title_must_not_contain_special_chars(cls, value: str) -> str:

@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, cast
 
 from sqlalchemy.orm import Session
 
@@ -13,9 +13,11 @@ class SqlAlchemyProjectRepository(AbstractProjectRepository):
 
     def get(self, project_id: int) -> Optional[DomainProject]:
         project_orm = self.session.query(ORMProject).filter(ORMProject.id == project_id).first()
-        if project_orm:
-            return DomainProject.model_validate(project_orm)
-        return None
+
+        if not project_orm:
+            return None
+
+        return cast(DomainProject, DomainProject.model_validate(project_orm))  # cast для mypy
 
     def list(self) -> List[DomainProject]:
         projects_orm = self.session.query(ORMProject).all()
@@ -26,7 +28,7 @@ class SqlAlchemyProjectRepository(AbstractProjectRepository):
         self.session.add(project_orm)
         self.session.commit()
         self.session.refresh(project_orm)
-        return DomainProject.model_validate(project_orm)
+        return cast(DomainProject, DomainProject.model_validate(project_orm))
 
     def update(self, project: DomainProject) -> DomainProject:
         project_orm = self.session.query(ORMProject).filter(ORMProject.id == project.id).first()
@@ -40,7 +42,7 @@ class SqlAlchemyProjectRepository(AbstractProjectRepository):
 
         self.session.commit()
         self.session.refresh(project_orm)
-        return DomainProject.model_validate(project_orm)
+        return cast(DomainProject, DomainProject.model_validate(project_orm))
 
     def delete(self, project_id: int) -> None:
         project_orm = self.session.query(ORMProject).filter(ORMProject.id == project_id).first()

@@ -1,5 +1,7 @@
 import logging
+
 from fastapi.testclient import TestClient
+
 
 def test_password_is_redacted_in_logs_on_failed_login(client: TestClient, caplog):
     """
@@ -21,15 +23,15 @@ def test_password_is_redacted_in_logs_on_failed_login(client: TestClient, caplog
         if "Failed login attempt" in record.message:
             failed_login_record = record
             break
-    
+
     assert failed_login_record is not None, "Failed login log record not found"
-    
+
     # Проверяем уровень лога
     assert failed_login_record.levelname == "WARNING"
-    
+
     # Проверяем, что секрет не попал в отформатированное сообщение
     assert "wrong_password" not in caplog.text
-    
+
     # Проверяем данные, которые были обработаны фильтром
     log_data = failed_login_record.data
     assert isinstance(log_data, dict)

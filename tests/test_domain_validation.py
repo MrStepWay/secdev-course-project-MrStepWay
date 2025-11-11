@@ -1,4 +1,5 @@
 from datetime import datetime
+
 from fastapi.testclient import TestClient
 
 
@@ -41,10 +42,10 @@ def test_create_entry_with_negative_duration_fails(client: TestClient):
     entry_data = {
         "task": "Test Task",
         "started_at": datetime.now().isoformat(),
-        "duration_seconds": -100, # Невалидное значение
+        "duration_seconds": -100,  # Невалидное значение
         "project_id": project_id,
     }
-    response = client.post(f"/api/v1/entries/", json=entry_data)
+    response = client.post("/api/v1/entries/", json=entry_data)
 
     assert response.status_code == 422
     data = response.json()

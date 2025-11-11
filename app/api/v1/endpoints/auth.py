@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, status
 import logging
+
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 
 from app.api.ratelimit import check_rate_limit, record_failed_login
 from app.api.v1.schemas.auth import UserLoginRequest
@@ -31,13 +32,21 @@ def login_secure(request: Request, form_data: UserLoginRequest):
     )
 
     if not user_password_hash or not verify_password(form_data.password, user_password_hash):
-        log_data = {"event": "login_failed", "username": form_data.username, "password": form_data.password}
+        log_data = {
+            "event": "login_failed",
+            "username": form_data.username,
+            "password": form_data.password,
+        }
+
         logger.warning("Failed login attempt", extra={"data": log_data})
 
         # Перед тем как выбросить ошибку, фиксируем неудачную попытку
         record_failed_login(request, form_data)
         raise credentials_exception
-    
-    logger.info(f"User '{form_data.username}' logged in successfully.", extra={"data": {"username": form_data.username}})
+
+    logger.info(
+        f"User '{form_data.username}' logged in successfully.",
+        extra={"data": {"username": form_data.username}},
+    )
 
     return {"access_token": form_data.username, "token_type": "bearer"}

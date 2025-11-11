@@ -1,14 +1,13 @@
-from typing import Generator, List, Optional
+from typing import Generator, List, Optional, cast
 
 import pytest
 from fastapi.testclient import TestClient
 
-from app.api.dependencies import get_project_service, get_entry_service
+from app.api.dependencies import get_entry_service, get_project_service
+from app.domain.models.entry import Entry
 from app.domain.models.project import Project
 from app.main import app
-from app.services.dtos import ProjectCreateDTO, ProjectUpdateDTO
-from app.domain.models.entry import Entry
-from app.services.dtos import EntryCreateDTO, EntryUpdateDTO
+from app.services.dtos import EntryCreateDTO, ProjectCreateDTO, ProjectUpdateDTO
 
 
 class MockProjectService:
@@ -58,6 +57,7 @@ class MockProjectService:
 
 class MockEntryService:
     """Сервис, имитирующий интерфейс EntryService."""
+
     def __init__(self, project_service: MockProjectService):
         self.entries: List[Entry] = []
         self._next_id = 1
@@ -67,11 +67,11 @@ class MockEntryService:
         # Проверяем существование проекта
         if not self.project_service.get_project_by_id(entry_dto.project_id):
             raise ValueError(f"Project with id {entry_dto.project_id} does not exist.")
-        
+
         # Валидация доменной модели (она сработает до этого теста, но для полноты мока пусть будет)
-        new_entry = Entry.model_validate(entry_dto)
+        new_entry = cast(Entry, Entry.model_validate(entry_dto))  # cast для mypy
         new_entry.id = self._next_id
-        
+
         self.entries.append(new_entry)
         self._next_id += 1
         return new_entry
@@ -86,7 +86,6 @@ class MockEntryService:
 def client() -> Generator[TestClient, None, None]:
     """Фикстура, которая мокает оба сервиса."""
     # Используем существующую фикстуру из conftest для ProjectService
-    from app.main import app
 
     mock_project_service = MockProjectService()
     mock_entry_service = MockEntryService(mock_project_service)

@@ -49,6 +49,7 @@ def test_validation_error_conforms_to_rfc7807(client: TestClient):
 
     assert "errors" in data
 
+
 def test_unhandled_route_error_conforms_to_rfc7807(client: TestClient):
     """
     Проверяет, что ошибка для несуществующего маршрута возвращается в формате RFC 7807.
