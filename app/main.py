@@ -1,7 +1,13 @@
 from fastapi import FastAPI
+import logging
 
 from app.api.v1.router import api_router
 from app.core.exceptions import register_exception_handlers
+from app.core.logging_config import setup_logging
+
+# Настраиваем логирование при старте приложения
+setup_logging()
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Time Tracker API",
