@@ -74,12 +74,12 @@ jobs:
         with:
           image-ref: 'time-tracker-app:ci-${{ github.sha }}'
           # таблица в лог и SARIF-файл для отчета
-          format: 'table'
+          format: 'sarif'
           output: 'trivy-results.sarif'
           # пайплайн упадет, если найдены уязвимости HIGH или CRITICAL
           severity: 'HIGH,CRITICAL'
           exit-code: '1'
-          ignorefile: '.trivyignore'
+          trivyignores: '.trivyignore'
 
       # загрузка отчета Trivy в GitHub Security Tab
       - name: Upload Trivy scan results to GitHub Security
