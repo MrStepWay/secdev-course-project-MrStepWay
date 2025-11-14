@@ -26,7 +26,7 @@ services:
       - "8000:8000"
     restart: always
 
-    # healthcheck как в Dockerfile 
+    # healthcheck как в Dockerfile
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 15s

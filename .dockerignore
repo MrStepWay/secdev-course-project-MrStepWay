@@ -30,7 +30,7 @@ build/
 .env.*
 !.env.example
 
-# Test & CI 
+# Test & CI
 tests/
 reports/
 coverage.xml
