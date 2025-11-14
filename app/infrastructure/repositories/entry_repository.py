@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, cast
 
 from sqlalchemy.orm import Session
 
@@ -13,9 +13,9 @@ class SqlAlchemyEntryRepository(AbstractEntryRepository):
 
     def get(self, entry_id: int) -> Optional[DomainEntry]:
         entry_orm = self.session.query(ORMEntry).filter(ORMEntry.id == entry_id).first()
-        if entry_orm:
-            return DomainEntry.model_validate(entry_orm)
-        return None
+        if not entry_orm:
+            return None
+        return cast(DomainEntry, DomainEntry.model_validate(entry_orm))
 
     def list(self, project_id: Optional[int] = None) -> List[DomainEntry]:
         query = self.session.query(ORMEntry)
@@ -30,7 +30,7 @@ class SqlAlchemyEntryRepository(AbstractEntryRepository):
         self.session.add(entry_orm)
         self.session.commit()
         self.session.refresh(entry_orm)
-        return DomainEntry.model_validate(entry_orm)
+        return cast(DomainEntry, DomainEntry.model_validate(entry_orm))
 
     def update(self, entry: DomainEntry) -> DomainEntry:
         entry_orm = self.session.query(ORMEntry).filter(ORMEntry.id == entry.id).first()
@@ -44,7 +44,7 @@ class SqlAlchemyEntryRepository(AbstractEntryRepository):
 
         self.session.commit()
         self.session.refresh(entry_orm)
-        return DomainEntry.model_validate(entry_orm)
+        return cast(DomainEntry, DomainEntry.model_validate(entry_orm))
 
     def delete(self, entry_id: int) -> None:
         entry_orm = self.session.query(ORMEntry).filter(ORMEntry.id == entry_id).first()
