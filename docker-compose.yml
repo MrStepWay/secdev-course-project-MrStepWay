@@ -1,0 +1,54 @@
+services:
+  db:
+    image: postgres:15-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: always
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: time-tracker-app:latest # имя для локального образа
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    restart: always
+
+    # healthcheck как в Dockerfile 
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+    # Запускаем от имени пользователя, созданного в Dockerfile
+    user: "1001:1001" # UID:GID
+
+    read_only: true # FS в read-only
+
+    # Создаем временную файловую систему в памяти для директорий на будущее
+    tmpfs:
+      - /tmp
+
+    cap_drop:
+      - ALL
+
+    # запрещаем процессу получать новые привилегии
+    security_opt:
+      - "no-new-privileges:true"
+
+volumes:
+  postgres_data:
