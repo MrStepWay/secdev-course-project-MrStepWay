@@ -78,6 +78,7 @@ jobs:
           output: 'trivy-results.sarif'
           # пайплайн упадет, если найдены уязвимости HIGH или CRITICAL
           severity: 'HIGH,CRITICAL'
+          limit-severities-for-sarif: true
           exit-code: '1'
           trivyignores: '.trivyignore'
 
