@@ -41,11 +41,9 @@ COPY ./alembic.ini .
 COPY ./migrations ./migrations
 COPY ./docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 
-# Даем права на выполнение скрипту
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
-
-# Меняем владельца всех файлов на нашего непривилегированного пользователя
-RUN chown -R appuser:appgroup /app
+# Даем права на выполнение скрипту и используем нашего пользователя
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh && \
+    chown -R appuser:appgroup /app
 
 # Переключаемся на непривилегированного пользователя
 USER appuser

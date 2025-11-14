@@ -75,7 +75,7 @@ jobs:
           image-ref: 'time-tracker-app:ci-${{ github.sha }}'
           # таблица в лог и SARIF-файл для отчета
           format: 'table'
-          sarif-ref: 'trivy-results.sarif'
+          output: 'trivy-results.sarif'
           # пайплайн упадет, если найдены уязвимости HIGH или CRITICAL
           severity: 'HIGH,CRITICAL'
           exit-code: '1'
@@ -83,8 +83,8 @@ jobs:
 
       # загрузка отчета Trivy в GitHub Security Tab
       - name: Upload Trivy scan results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        if: success() || failure()
         with:
           sarif_file: 'trivy-results.sarif'
           category: trivy
