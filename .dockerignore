@@ -1,17 +1,41 @@
+# Git
 .git
 .gitignore
-.gitattributes
+
+# Docker
+.dockerignore
+Dockerfile
+
+# Python
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-*.sqlite
-*.db
+.pytest_cache/
 .venv/
+venv/
+*.egg-info/
 dist/
 build/
-.pytest_cache/
-.coverage
-htmlcov/
-node_modules/
+
+# IDE & OS
+.idea/
+.vscode/
+*.swp
+*~
+.DS_Store
+
+# Configs & Secrets
 .env
+.env.*
+!.env.example
+
+# Test & CI
+tests/
+reports/
+coverage.xml
+pyproject.toml
+requirements-dev.txt
+compose.yaml
+ci.yml
+.pre-commit-config.yaml
