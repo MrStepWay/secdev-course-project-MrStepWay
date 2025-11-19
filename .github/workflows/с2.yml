@@ -1,6 +1,5 @@
-name: CI/CD
+name: CI/CD Pipeline
 
-# отменяем старые запуски в том же PR, чтобы экономить ресурсы
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -13,19 +12,20 @@ on:
 
 permissions:
   contents: read
-  packages: write # Нужно для загрузки Docker-образа в GHCR
-  security-events: write # Нужно для загрузки отчета Trivy
+  packages: write
+  security-events: write
 
 jobs:
+  # ============================================================================
+  # JOB 1: TEST & LINT
+  # ============================================================================
   test-and-lint:
     runs-on: ${{ matrix.os }}
-    
     defaults:
       run:
         shell: bash
-
     strategy:
-      fail-fast: false # если упадет одна версия , остальные продолжат выполняться
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
         python-version: ["3.11", "3.12"]
@@ -34,13 +34,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # setup-python имеет встроенный кэш для pip
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
           cache: "pip"
-          # Оптимизация ключа
           cache-dependency-path: |
             requirements.txt
             requirements-dev.txt
@@ -59,25 +57,24 @@ jobs:
       - name: Type Check (Mypy)
         run: mypy .
 
-      # генерирация отчетов
       - name: Run Tests with Coverage
         run: |
           mkdir -p reports
           pytest --junitxml=reports/junit.xml --cov=app --cov-report=html:reports/htmlcov --cov-report=term
 
-      # Загружаем отчёты только с одной комбинации (Ubuntu + 3.11), чтобы не дублировалось
       - name: Upload Test Reports
-        # Тут success() || failure() (как и далее) вместо always(), чтобы можно было отменять руками
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11' && (success() || failure())
         uses: actions/upload-artifact@v4
         with:
           name: test-reports
           path: reports/
 
+  # ============================================================================
+  # JOB 2: BUILD & SECURITY SCAN
+  # ============================================================================
   build-scan-push:
     needs: test-and-lint
     runs-on: ubuntu-latest
-    # Запускаем сборку образа только если тесты прошли
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -98,18 +95,16 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # метаданные для тегов образа
       - name: Extract Docker metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ github.repository }}/app
-          # Короткий тег
+          # Генерирует тег вида: sha-a1b2c3d (7 символов)
           tags: |
             type=ref,event=branch
             type=sha,format=short
 
-      # сборка и загрузка локально для сканирования
       - name: Build and Load for Scanning
         uses: docker/build-push-action@v5
         with:
@@ -119,20 +114,15 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
-          # Кэш записываем только в шаге Push, чтобы не дублировать
 
-      # Сканирование Trivy (артефакт)
       - name: Scan image with Trivy
         uses: aquasecurity/trivy-action@0.24.0
         with:
-          # Сканируем только что собранный образ (берем первый тег из списка)
           image-ref: ${{ fromJSON(steps.meta.outputs.json).tags[0] }}
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'HIGH,CRITICAL'
           limit-severities-for-sarif: true
-
-          # Раньше роняли, но сейчас не роняем пайплайн из-за уязвимостей ос.
           exit-code: '0'
           trivyignores: '.trivyignore'
 
@@ -142,8 +132,7 @@ jobs:
         with:
           sarif_file: 'trivy-results.sarif'
           category: trivy
-      
-      # пуш в реестр, из-за кэша должно быть быстро
+
       - name: Push Docker image
         if: github.event_name != 'pull_request'
         uses: docker/build-push-action@v5
@@ -156,42 +145,52 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # симуляция деплоя
+  # ============================================================================
+  # JOB 3: DEPLOY STAGING
+  # ============================================================================
   deploy-staging:
     needs: build-scan-push
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    environment: staging # указываем среду
+    environment: 
+      name: staging
+      url: https://staging.example.com
     steps:
       - name: Deploy to Staging
         env:
           DB_URL: ${{ secrets.DATABASE_URL }}
         run: |
+          # Вычисляем короткий SHA (7 символов), чтобы совпасть с тегом образа
           SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
           IMAGE_TAG="sha-${SHORT_SHA}"
           
-          echo "Deploying to staging environment..."
+          echo "🚀 Deploying to STAGING environment..."
           echo "Using DB Connection: $DB_URL"
           echo "Image to deploy: ghcr.io/${{ github.repository }}/app:${IMAGE_TAG}"
           sleep 2
-          echo "Staging deploy complete!"
+          echo "✅ Staging deploy complete!"
 
-  # промоушен
+  # ============================================================================
+  # JOB 4: DEPLOY PRODUCTION
+  # ============================================================================
   deploy-prod:
     needs: deploy-staging
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    environment: production
+    environment: 
+      name: production
+      url: https://prod.example.com
     steps:
       - name: Promote to Production
         env:
           DB_URL: ${{ secrets.DATABASE_URL }}
         run: |
+          # Вычисляем короткий SHA (7 символов)
           SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
           IMAGE_TAG="sha-${SHORT_SHA}"
 
-          echo "Promoting to production environment..."
+          echo "🚀 Promoting to PRODUCTION environment..."
           echo "Using DB Connection: $DB_URL"
           echo "Image to deploy: ghcr.io/${{ github.repository }}/app:${IMAGE_TAG}"
           sleep 2
-          echo "Production deploy complete!"
+          echo "✅ Production deploy complete!"

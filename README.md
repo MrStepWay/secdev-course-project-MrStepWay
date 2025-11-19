@@ -1,3 +1,5 @@
+![CI Status](https://github.com/MrStepWay/secdev-course-project-MrStepWay/actions/workflows/ci.yml/badge.svg?branch=main)
+
 # Project: Time Tracer
 
 Есть две сущности: проект и запись.
