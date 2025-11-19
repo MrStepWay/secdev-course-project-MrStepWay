@@ -19,7 +19,7 @@ permissions:
 jobs:
   test-and-lint:
     runs-on: ${{ matrix.os }}
-    
+
     defaults:
       run:
         shell: bash
@@ -55,7 +55,7 @@ jobs:
           ruff check --output-format=github .
           black --check .
           isort --check-only .
-      
+
       - name: Type Check (Mypy)
         run: mypy .
 
@@ -142,7 +142,7 @@ jobs:
         with:
           sarif_file: 'trivy-results.sarif'
           category: trivy
-      
+
       # пуш в реестр, из-за кэша должно быть быстро
       - name: Push Docker image
         if: github.event_name != 'pull_request'
@@ -169,7 +169,7 @@ jobs:
         run: |
           SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
           IMAGE_TAG="sha-${SHORT_SHA}"
-          
+
           echo "Deploying to staging environment..."
           echo "Using DB Connection: $DB_URL"
           echo "Image to deploy: ghcr.io/${{ github.repository }}/app:${IMAGE_TAG}"

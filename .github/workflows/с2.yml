@@ -53,7 +53,7 @@ jobs:
           ruff check --output-format=github .
           black --check .
           isort --check-only .
-      
+
       - name: Type Check (Mypy)
         run: mypy .
 
@@ -152,7 +152,7 @@ jobs:
     needs: build-scan-push
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    environment: 
+    environment:
       name: staging
       url: https://staging.example.com
     steps:
@@ -163,7 +163,7 @@ jobs:
           # Вычисляем короткий SHA (7 символов), чтобы совпасть с тегом образа
           SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
           IMAGE_TAG="sha-${SHORT_SHA}"
-          
+
           echo "🚀 Deploying to STAGING environment..."
           echo "Using DB Connection: $DB_URL"
           echo "Image to deploy: ghcr.io/${{ github.repository }}/app:${IMAGE_TAG}"
@@ -177,7 +177,7 @@ jobs:
     needs: deploy-staging
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    environment: 
+    environment:
       name: production
       url: https://prod.example.com
     steps:
