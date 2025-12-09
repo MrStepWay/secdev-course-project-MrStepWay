@@ -142,7 +142,7 @@ jobs:
         with:
           sarif_file: 'trivy-results.sarif'
           category: trivy
-      
+
       - name: Upload Trivy report as artifact
         uses: actions/upload-artifact@v4
         if: success() || failure() # сохраняем отчет в том числе если найдены уязвимости

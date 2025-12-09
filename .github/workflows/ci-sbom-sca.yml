@@ -45,7 +45,7 @@ jobs:
             --source-name "TimeTracker-API" \
             --source-version "$GITHUB_SHA" \
             > EVIDENCE/P09/sbom.json
-          
+
           echo "SBOM generated at EVIDENCE/P09/sbom.json"
 
       # Сканирование SBOM с помощью Grype (SCA)
@@ -60,14 +60,14 @@ jobs:
             anchore/grype:v0.104.1 \
             sbom:EVIDENCE/P09/sbom.json \
             -o json > EVIDENCE/P09/sca_report.json
-            
+
           echo "Scan complete. Report saved to EVIDENCE/P09/sca_report.json"
 
       # Генерация отчёта
       - name: Generate SCA Summary
         run: |
           SUMMARY_FILE=EVIDENCE/P09/sca_summary.md
-          
+
           echo "# SCA Summary" > $SUMMARY_FILE
           echo "" >> $SUMMARY_FILE
           echo "**Ref:** $GITHUB_REF_NAME ($GITHUB_SHA)" >> $SUMMARY_FILE
@@ -75,16 +75,16 @@ jobs:
           echo "**Tools:** Syft v1.38.0 / Grype v0.104.1" >> $SUMMARY_FILE
           echo "**Date:** $(date -u)" >> $SUMMARY_FILE
           echo "" >> $SUMMARY_FILE
-          
+
           echo "### Vulnerability Severity Breakdown" >> $SUMMARY_FILE
           echo '```json' >> $SUMMARY_FILE
-          
+
           # группировка по severity через jq
           jq '[.matches[].vulnerability.severity] | group_by(.) | map({(.[0]): length}) | add' \
             EVIDENCE/P09/sca_report.json >> $SUMMARY_FILE || echo "{}" >> $SUMMARY_FILE
-          
+
           echo '```' >> $SUMMARY_FILE
-          
+
           echo "### High/Critical Findings" >> $SUMMARY_FILE
           jq -r '.matches[] | select(.vulnerability.severity == "Critical" or .vulnerability.severity == "High") | "- **" + .vulnerability.severity + "** (" + .artifact.name + "): " + .vulnerability.id' \
             EVIDENCE/P09/sca_report.json | sort | uniq >> $SUMMARY_FILE || true
