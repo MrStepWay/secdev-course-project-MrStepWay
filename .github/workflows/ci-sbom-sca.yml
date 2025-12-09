@@ -1,0 +1,100 @@
+name: Security - SBOM & SCA
+
+on:
+  workflow_dispatch: # ручной запуск
+  push:
+    branches: ['**']
+    paths:
+      - "**/*.py"
+      - "requirements*.txt"
+      - "Dockerfile"
+      - ".github/workflows/ci-sbom-sca.yml"
+      - "policy/waivers.yml"
+
+permissions:
+  contents: read
+
+# отменяем предыдущие запущенные джобы в том же PR/ветке
+concurrency:
+  group: sbom-sca-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sbom_sca:
+    name: SBOM & SCA (Syft + Grype)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Create Evidence Directory
+        run: mkdir -p EVIDENCE/P09
+
+      # Генерация SBOM с помощью Syft
+      - name: Generate SBOM (Syft CycloneDX)
+        run: |
+          echo "Generating SBOM for commit: $GITHUB_SHA"
+          docker run --rm \
+            -v $PWD:/work \
+            -w /work \
+            anchore/syft:v1.38.0 \
+            scan dir:. \
+            -o cyclonedx-json \
+            --source-name "TimeTracker-API" \
+            --source-version "$GITHUB_SHA" \
+            > EVIDENCE/P09/sbom.json
+          
+          echo "SBOM generated at EVIDENCE/P09/sbom.json"
+
+      # Сканирование SBOM с помощью Grype (SCA)
+      # подаем на вход ранее сгенерированный SBOM
+      - name: SCA Scan (Grype)
+        run: |
+          set -e
+          echo "Running Vulnerability Scan..."
+          docker run --rm \
+            -v $PWD:/work \
+            -w /work \
+            anchore/grype:v0.104.1 \
+            sbom:EVIDENCE/P09/sbom.json \
+            -o json > EVIDENCE/P09/sca_report.json
+            
+          echo "Scan complete. Report saved to EVIDENCE/P09/sca_report.json"
+
+      # Генерация отчёта
+      - name: Generate SCA Summary
+        run: |
+          erun: |
+          SUMMARY_FILE=EVIDENCE/P09/sca_summary.md
+          
+          echo "# SCA Summary" > $SUMMARY_FILE
+          echo "" >> $SUMMARY_FILE
+          echo "**Ref:** $GITHUB_REF_NAME ($GITHUB_SHA)" >> $SUMMARY_FILE
+          echo "**Workflow Run:** [$GITHUB_RUN_ID]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)" >> $SUMMARY_FILE
+          echo "**Tools:** Syft v1.38.0 / Grype v0.104.1" >> $SUMMARY_FILE
+          echo "**Date:** $(date -u)" >> $SUMMARY_FILE
+          echo "" >> $SUMMARY_FILE
+          
+          echo "### Vulnerability Severity Breakdown" >> $SUMMARY_FILE
+          echo '```json' >> $SUMMARY_FILE
+          
+          # группировка по severity через jq
+          jq '[.matches[].vulnerability.severity] | group_by(.) | map({(.[0]): length}) | add' \
+            EVIDENCE/P09/sca_report.json >> $SUMMARY_FILE || echo "{}" >> $SUMMARY_FILE
+          
+          echo '```' >> $SUMMARY_FILE
+          
+          echo "### High/Critical Findings" >> $SUMMARY_FILE
+          jq -r '.matches[] | select(.vulnerability.severity == "Critical" or .vulnerability.severity == "High") | "- **" + .vulnerability.severity + "** (" + .artifact.name + "): " + .vulnerability.id' \
+            EVIDENCE/P09/sca_report.json | sort | uniq >> $SUMMARY_FILE || true
+
+          cat $SUMMARY_FILE
+
+      - name: Upload Evidence Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: P09_EVIDENCE
+          path: EVIDENCE/P09/
