@@ -1,0 +1,14 @@
+title = "Time Tracker Gitleaks Config"
+
+[allowlist]
+description = "Global allowlist"
+paths = [
+    '''EVIDENCE/.*''', # Игнорируем сами отчеты
+    '''reports/.*''', # Игнорируем отчеты тестов
+    '''\.git/.*''', # Игнорируем внутренности git
+    '''migrations/.*''', # На всякий случай, ведь хеш, может быть похож на секреты
+]
+
+regexes = [
+    '''postgres:postgres''', # Часто встречается в docker-compose примерах
+]
