@@ -1,14 +1,23 @@
 waivers:
-  - id: "CVE-2024-42005"
+  - id: "CVE-2024-47874"
     package: "starlette"
     severity: "High"
     status: "fixed"
     reason: "Обновление FastAPI до версии 0.121.2 устранило уязвимость в подлежащем пакете starlette."
     fixed_in: "0.121.2"
-    date: "2025-01-01"
+    date: "2025-11-18"
+
+  - id: "CVE-2025-54121"
+    package: "starlette"
+    severity: "Medium"
+    status: "fixed"
+    reason: "Обновление FastAPI до версии 0.121.2 устранило уязвимость в подлежащем пакете starlette."
+    fixed_in: "0.121.2"
+    date: "2025-11-18"
+
 
   # Пример:
-#   - id: "CVE-2024-XXXX"
+#   - id: "CVE-20XX-XXXX"
 #     package: "example-lib"
 #     version: "1.2.3"
 #     severity: "High"
