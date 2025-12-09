@@ -19,7 +19,7 @@ rules:
     metadata:
       category: security
       cwe: "CWE-489"
-  
+
   - id: py-unsafe-html-echo
     languages: [python]
     message: "Потенциально небезопасный вывод пользовательских данных в HTMLResponse"
