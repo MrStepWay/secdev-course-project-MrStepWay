@@ -1,0 +1,79 @@
+name: Security - DAST (OWASP ZAP)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['**']
+    paths:
+      - "app/**"
+      - "Dockerfile"
+      - "docker-compose.yml"
+      - "requirements.txt"
+      - ".github/workflows/ci-p11-dast.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dast-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dast_zap:
+    name: OWASP ZAP Baseline Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Create Evidence Directory
+        run: mkdir -p EVIDENCE/P11
+
+      # фиктивный .env для CI, так как docker-compose его ждет
+      - name: Setup Environment
+        run: |
+          echo "POSTGRES_USER=postgres" >> .env
+          echo "POSTGRES_PASSWORD=postgres" >> .env
+          echo "POSTGRES_DB=app" >> .env
+          echo "DATABASE_URL=postgresql://postgres:postgres@db:5432/app" >> .env
+
+      - name: Start Services (Docker Compose)
+        run: |
+          docker compose up -d --build
+          echo "Waiting for services to start..."
+          docker compose ps
+
+      - name: Wait for Application Health
+        run: |
+          timeout 60s bash -c 'until curl -sf http://localhost:8000/health; do sleep 2; done'
+          echo "Application is healthy!"
+
+      - name: Run ZAP Baseline Scan
+        run: |
+          chmod 777 EVIDENCE/P11
+
+          docker run --rm \
+            --network host \
+            -v "$PWD/EVIDENCE/P11":/zap/wrk/:rw \
+            zaproxy/zap-stable:2.16.1 \
+            zap-baseline.py \
+            -t http://localhost:8000 \
+            -r zap_baseline.html \
+            -J zap_baseline.json \
+            -d \
+            -I || true
+
+          ls -l EVIDENCE/P11/
+
+      - name: Shutdown Services
+        if: always()
+        run: docker compose down
+
+      - name: Upload Evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: P11_EVIDENCE
+          path: EVIDENCE/P11/
