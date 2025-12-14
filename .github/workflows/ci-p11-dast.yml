@@ -53,7 +53,7 @@ jobs:
       - name: Run ZAP Baseline Scan
         run: |
           chmod 777 EVIDENCE/P11
-          
+
           docker run --rm \
             --network host \
             -v "$PWD/EVIDENCE/P11":/zap/wrk/:rw \
@@ -64,7 +64,7 @@ jobs:
             -J zap_baseline.json \
             -d \
             -I || true
-          
+
           ls -l EVIDENCE/P11/
 
       - name: Shutdown Services
