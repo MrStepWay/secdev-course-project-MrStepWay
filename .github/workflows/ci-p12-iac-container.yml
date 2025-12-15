@@ -1,0 +1,80 @@
+name: Security - IaC & Container (P12)
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "Dockerfile"
+      - "deploy/**"
+      - "security/**"
+      - ".github/workflows/ci-p12-iac-container.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: p12-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  iac_container_security:
+    name: Hadolint, Checkov & Trivy
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Create Evidence Directory
+        run: mkdir -p EVIDENCE/P12
+
+      - name: Hadolint Scan
+        run: |
+          echo "Scanning Dockerfile..."
+          docker run --rm \
+            -v $PWD:/work \
+            -w /work \
+            hadolint/hadolint:v2.14.0 \
+            hadolint --config security/hadolint.yaml -f json Dockerfile \
+            > EVIDENCE/P12/hadolint_report.json || true
+          
+          echo "Hadolint report generated."
+
+      - name: Checkov IaC Scan
+        run: |
+          echo "Scanning IaC (deploy/)..."
+
+          docker run --rm \
+            -v $PWD:/work \
+            bridgecrew/checkov:3.2.495 \
+            -d /work/deploy \
+            --config-file /work/security/checkov.yaml \
+            -o json \
+            > EVIDENCE/P12/checkov_report.json || true
+            
+          echo "Checkov report generated."
+      
+      - name: Build Local Image
+        run: |
+          docker build -t app:local .
+
+      - name: Trivy Image Scan
+        run: |
+          echo "Scanning Container Image..."
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v $PWD:/work \
+            aquasec/trivy:0.68.1 \
+            image app:local \
+            --config /work/security/trivy.yaml \
+            --output /work/EVIDENCE/P12/trivy_report.json || true
+          
+          echo "Trivy report generated."
+
+      - name: Upload Evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: P12_EVIDENCE
+          path: EVIDENCE/P12/

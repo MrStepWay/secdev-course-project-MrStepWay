@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: time-tracker-app
+  namespace: default
+  labels:
+    app: time-tracker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: time-tracker
+  template:
+    metadata:
+      labels:
+        app: time-tracker
+    spec:
+      # Fix CKV_K8S_38: Don't mount service account token automatically
+      automountServiceAccountToken: false
+      securityContext:
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        # Fix CKV_K8S_31: Use default seccomp profile
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: app
+          # Fix CKV_K8S_14: Use specific tag instead of latest
+          image: ghcr.io/mrstepway/time-tracker-app:v1.0.0
+          # Fix CKV_K8S_15: Force pull to ensure fresh image and auth check
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+          
+          # Fix CKV_K8S_8 & CKV_K8S_9: Health checks
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+          resources:
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
